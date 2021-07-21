@@ -1,6 +1,6 @@
 # The Plesser Problem
 
-<img src="plesser-problem.png" width="300"/>
+<img src="plesser_problem.png" width="300"/>
 
 
 ```python
