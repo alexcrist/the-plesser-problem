@@ -1,6 +1,23 @@
 # The Plesser Problem
 
-<img src="plesser_problem.png" width="300"/>
+#### How can you go from the graph on the left to the graph on the right using only the two moves seen below the graphs?
+
+<img src="images/plesser_problem.png" width="300"/>
+
+## Moves
+
+Move #1 (the duo move) can be made on any two connected nodes of the same color. It changes the shape of the graph.
+
+Move #2 (the quad move) can be made on four alternate-colored nodes that form a square. It rotates the colors in the square.
+
+## Example problem and solution
+
+<div style="display: flex;">
+    <img src="images/example_problem.png" width="300"/>
+    <img src="images/example_solution.png" width="300"/>
+</div>
+
+## Solving it with code
 
 
 ```python
@@ -48,7 +65,7 @@ solution_node_edges = [
 
 ```python
 IPython.display.display(IPython.display.HTML('<h2>Starter graph</h2>'))
-IPython.display.display(IPython.display.HTML('<img src="starter_graph.png" width="390"/>'))
+IPython.display.display(IPython.display.HTML('<img src="images/starter_graph.png" width="390"/>'))
 draw_node_edges(starting_node_edges)
 ```
 
@@ -57,19 +74,19 @@ draw_node_edges(starting_node_edges)
 
 
 
-<img src="starter_graph.png" width="390"/>
+<img src="images/starter_graph.png" width="390"/>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_4_2.png)
+![png](images/README_5_2.png)
     
 
 
 
 ```python
 IPython.display.display(IPython.display.HTML('<h2>Solution graph</h2>'))
-IPython.display.display(IPython.display.HTML('<img src="solution_graph.png" width="390"/>'))
+IPython.display.display(IPython.display.HTML('<img src="images/solution_graph.png" width="390"/>'))
 draw_node_edges(solution_node_edges)
 ```
 
@@ -78,12 +95,12 @@ draw_node_edges(solution_node_edges)
 
 
 
-<img src="solution_graph.png" width="390"/>
+<img src="images/solution_graph.png" width="390"/>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_5_2.png)
+![png](images/README_6_2.png)
     
 
 
@@ -264,7 +281,7 @@ print('Solved in {} seconds after searching through {:,} graphs.'.format(seconds
 ```
 
     Solving...
-    Solved in 14.47 seconds after searching through 12,000 graphs.
+    Solved in 14.42 seconds after searching through 12,000 graphs.
 
 
 ## The solution
@@ -272,12 +289,12 @@ print('Solved in {} seconds after searching through {:,} graphs.'.format(seconds
 
 ```python
 IPython.display.display(IPython.display.HTML('<h2>Starter graph</h2>'))
-IPython.display.display(IPython.display.HTML('<img src="starter_graph.png" width="390"/>'))
+IPython.display.display(IPython.display.HTML('<img src="images/starter_graph.png" width="390"/>'))
 for i, graph in enumerate(solution.previous_graphs):
-    IPython.display.display(IPython.display.HTML('<h2>Step {}: {}</h2>'.format(i + 1, graph.previous_moves[i])))
+    IPython.display.display(IPython.display.HTML('<h2>Step {}: {}</h2>'.format(i, graph.previous_moves[i])))
     graph.draw()
 IPython.display.display(IPython.display.HTML('<h2>Solution graph</h2>'))
-IPython.display.display(IPython.display.HTML('<img src="solution_graph.png" width="390"/>'))
+IPython.display.display(IPython.display.HTML('<img src="images/solution_graph.png" width="390"/>'))
 ```
 
 
@@ -285,86 +302,86 @@ IPython.display.display(IPython.display.HTML('<img src="solution_graph.png" widt
 
 
 
-<img src="starter_graph.png" width="390"/>
+<img src="images/starter_graph.png" width="390"/>
 
 
 
-<h2>Step 1: Starter graph</h2>
-
-
-
-    
-![png](plesser_problem_files/plesser_problem_11_3.png)
-    
-
-
-
-<h2>Step 2: Duo move with b7 and b8</h2>
+<h2>Step 0: Starter graph</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_11_5.png)
+![png](images/README_12_3.png)
     
 
 
 
-<h2>Step 3: Quad move with w2, b2, w3, and b3</h2>
+<h2>Step 1: Duo move with b7 and b8</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_11_7.png)
+![png](images/README_12_5.png)
     
 
 
 
-<h2>Step 4: Duo move with b2 and b1</h2>
+<h2>Step 2: Quad move with w2, b2, w3, and b3</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_11_9.png)
+![png](images/README_12_7.png)
     
 
 
 
-<h2>Step 5: Duo move with b3 and b4</h2>
+<h2>Step 3: Duo move with b2 and b1</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_11_11.png)
+![png](images/README_12_9.png)
     
 
 
 
-<h2>Step 6: Duo move with w5 and w2</h2>
+<h2>Step 4: Duo move with b3 and b4</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_11_13.png)
+![png](images/README_12_11.png)
     
 
 
 
-<h2>Step 7: Quad move with w4, b4, w2, and b5</h2>
+<h2>Step 5: Duo move with w5 and w2</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_11_15.png)
+![png](images/README_12_13.png)
     
 
 
 
-<h2>Step 8: Quad move with w7, b6, w8, and b8</h2>
+<h2>Step 6: Quad move with w4, b4, w2, and b5</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_11_17.png)
+![png](images/README_12_15.png)
+    
+
+
+
+<h2>Step 7: Quad move with w7, b6, w8, and b8</h2>
+
+
+
+    
+![png](images/README_12_17.png)
     
 
 
@@ -373,5 +390,5 @@ IPython.display.display(IPython.display.HTML('<img src="solution_graph.png" widt
 
 
 
-<img src="solution_graph.png" width="390"/>
+<img src="images/solution_graph.png" width="390"/>
 
