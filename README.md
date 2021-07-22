@@ -286,7 +286,7 @@ print('Solved in {} seconds after searching through {:,} graphs.'.format(seconds
     Solved in 14.42 seconds after searching through 12,000 graphs.
 
 
-## The solution
+# The solution
 
 
 ```python
