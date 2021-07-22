@@ -42,7 +42,7 @@ from plesser_utils import (
 
 Each graph is represented as an array of tuples.
 
-Each tuple contains the name of a node and an list of destination nodes that the node connects to in clockwise order.
+Each tuple contains the name of a node and a list of destination nodes that the node connects to in clockwise order.
 The destination nodes MUST be in clockwise order for the search algorithm to work.
 
 Black nodes are denoted with a `b`, white nodes with a `w`, and edge nodes with an `e`.
