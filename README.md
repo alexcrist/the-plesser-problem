@@ -17,7 +17,9 @@ Move #2 (the quad move) can be made on four alternate-colored nodes that form a 
     <img src="images/example_solution.png" width="300"/>
 </div>
 
-## Solving it with code
+# Solving it with code
+
+We should be able to brute-force solve the problem by performing a breadth-first search of all possible moves.
 
 
 ```python
