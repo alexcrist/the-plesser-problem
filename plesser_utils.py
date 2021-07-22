@@ -52,3 +52,40 @@ def draw_node_edges(node_edges):
             if (destination, node) not in edges:
                 edges.append((node, destination))            
     draw_graph(nodes, edges)
+    
+def hash_graph(graph):
+    
+        path = ['e1']
+        
+        queue = []
+        
+        node_edge_index = None
+        destination_index = None
+        for i, (node, destinations) in enumerate(graph.node_edges):
+            if 'e1' in destinations:
+                node_edge_index = i
+                destination_index = destinations.index('e1')
+                path.append(node)
+                queue.append((node, 'e1'))
+                
+        while len(path) < 24:
+            
+            node, origin = queue.pop(0)
+            destinations = list(filter(lambda x: x[0] == node, graph.node_edges))[0][1]
+            origin_index = destinations.index(origin)
+            for i in range(1, len(destinations)):
+                destination_index = (origin_index + i) % len(destinations)
+                destination = destinations[destination_index]
+                if destination not in path:
+                    path.append(destination)
+                    if destination[0] != 'e':
+                        queue.append((destination, node))
+        
+        hash_string = ''
+        for node in path:
+            if node[0] == 'e':
+                hash_string += node
+            else:
+                hash_string += node[0]
+        
+        return hash(hash_string)
