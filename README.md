@@ -255,7 +255,7 @@ Now we can perform a breadth-first search for the solution.
 
 We initialize a queue that starts out with only the starting Graph and begin looping.
 
-Each iteration of the loop, we take remove the first Graph from the queue, then determine and
+Each iteration of the loop, we take the first Graph from the queue, then determine and
 execute all possible moves for that Graph. We add the resulting Graphs to the end of the queue.
 
 If a Graph is determined to be a repeat representation, we do not continue searching down that branch.
