@@ -6,12 +6,27 @@
 ```python
 import math
 import copy
+import time
 import IPython
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from plesser_utils import draw_node_edges, get_pairs, reverse_destination_order
+from plesser_utils import (
+    draw_node_edges, 
+    get_pairs, 
+    reverse_destination_order,
+    hash_graph
+)
 ```
+
+## Graph data model
+
+Each graph is represented as an array of tuples.
+
+Each tuple contains the name of a node and an list of destination nodes that the node connects to in clockwise order.
+The destination nodes MUST be in clockwise order for the search algorithm to work.
+
+Black nodes are denoted with a `b`, white nodes with a `w`, and edge nodes with an `e`.
 
 
 ```python
@@ -21,31 +36,7 @@ starting_node_edges = [
     ('b1', ['e2', 'w2', 'w1']), ('b2', ['e3', 'w3', 'w2']), ('b3', ['w3', 'w5', 'w2']), ('b4', ['e4', 'w4', 'w3']),
     ('b5', ['w4', 'w6', 'w5']), ('b6', ['w6', 'w8', 'w7']), ('b7', ['w8', 'e8', 'b8']), ('b8', ['w7', 'b7', 'w1'])
 ]
-```
 
-
-```python
-IPython.display.display(IPython.display.HTML('<h1>Starter graph</h1>'))
-IPython.display.display(IPython.display.HTML('<img src="starter_graph.png" width="390"/>'))
-draw_node_edges(starting_node_edges)
-```
-
-
-<h1>Starter graph</h1>
-
-
-
-<img src="starter_graph.png" width="390"/>
-
-
-
-    
-![png](plesser_problem_files/plesser_problem_3_2.png)
-    
-
-
-
-```python
 solution_node_edges = [
     ('w1', ['e3', 'b2', 'b1']), ('w2', ['b2', 'b3', 'b4']), ('w3', ['b3', 'w4', 'b4']), ('w4', ['w3', 'e6', 'w5']),
     ('w5', ['w4', 'b6', 'b5']), ('w6', ['b4', 'b5', 'b8']), ('w7', ['b5', 'b6', 'b7']), ('w8', ['b8', 'b7', 'e1']),
@@ -56,13 +47,34 @@ solution_node_edges = [
 
 
 ```python
-IPython.display.display(IPython.display.HTML('<h1>Solution graph</h1>'))
+IPython.display.display(IPython.display.HTML('<h2>Starter graph</h2>'))
+IPython.display.display(IPython.display.HTML('<img src="starter_graph.png" width="390"/>'))
+draw_node_edges(starting_node_edges)
+```
+
+
+<h2>Starter graph</h2>
+
+
+
+<img src="starter_graph.png" width="390"/>
+
+
+
+    
+![png](plesser_problem_files/plesser_problem_4_2.png)
+    
+
+
+
+```python
+IPython.display.display(IPython.display.HTML('<h2>Solution graph</h2>'))
 IPython.display.display(IPython.display.HTML('<img src="solution_graph.png" width="390"/>'))
 draw_node_edges(solution_node_edges)
 ```
 
 
-<h1>Solution graph</h1>
+<h2>Solution graph</h2>
 
 
 
@@ -75,32 +87,68 @@ draw_node_edges(solution_node_edges)
     
 
 
+## Determining and executing moves
+
+Two moves are allowed as seen in the initial screenshot. I call these moves 'duo' moves and 'quad moves.
+
+The following class defines the Graph object which is initialized with the 'node_edge' data model above.
+
+A Graph can determine possible moves, execute those moves, and store a history of previous graphs and the 
+moves that were made to get to the current graph.
+
+Additionally, Graph objects can be compared to eachother for equivalence using the standard == operator.
+
 
 ```python
 class Graph:
     
     def __init__(self, node_edges, previous_graphs=[], previous_moves=['Starter graph'], depth=0):
+        ''' Creates a new graph '''
         self.node_edges = copy.deepcopy(node_edges)
         self.depth = depth
         self.previous_graphs = previous_graphs + [self]
         self.previous_moves = previous_moves
-    
-    def draw(self):
-        draw_node_edges(self.node_edges)
         
-    # Find all pairs of same-color touching nodes
+    def __hash__(self):
+        ''' A custom hashing function used for determining if two Graphs are equivalent.
+            Two Graphs are considered equivalent if the structure of edges and nodes are the same,
+            the color of the nodes is the same (black / white). And the edge node numbers are the
+            same.
+            
+            Note: two Graphs are still considered equivalent even if black or white nodes are numbered 
+            differently.
+        '''
+        return hash_graph(self)
+    
+    def __eq__(self, other):
+        ''' A custom equality function, allowing us to compare if two Graphs are equivalent using the 
+            standard == operator '''
+        if isinstance(other, Graph):
+            return hash(self) == hash(other)
+        return False
+
+    def draw(self):
+        ''' Displays the graph '''
+        draw_node_edges(self.node_edges)
+
     def get_duo_moves(self):
+        ''' Returns a list of 2-tuples containing all same-colored nodes that connect
+            and are therefore eligible for a 'duo' move (move #1) 
+            
+            Example return value: [('w1', 'w2'), ('b3', 'b7')] '''
         duo_moves = []
         for node, destinations in self.node_edges:
             for destination in destinations:
                 if node[0] == destination[0] and (destination, node) not in duo_moves:
                     duo_moves.append((node, destination))
         return duo_moves
-        
-    # Find all quads of alternate-colored squares
+
     def get_quad_moves(self):
+        ''' Returns a list of 4-tuples containing nodes that connect in an alternating-colored
+            square formation and are therefore eligible for a 'quad' move (move #2) 
+            
+            Example return value: [('w1', 'b5', 'w7', 'b2')] '''
         quad_moves = []
-        
         potentials = []
         for node, destinations in self.node_edges:
             if node[0] == 'w':
@@ -108,24 +156,25 @@ class Graph:
                 black_pairs = get_pairs(black_destinations)
                 for black_pair in black_pairs:
                     potentials.append((node, black_pair))
-        
         for i in range(len(potentials)):
             white_node1, black_pair1 = potentials[i]
             for j in range(i + 1, len(potentials)):
                 white_node2, black_pair2 = potentials[j]
                 if black_pair1 == black_pair2:
                     quad_moves.append((white_node1, black_pair1[0], white_node2, black_pair1[1]))
-        
         return quad_moves
-            
-    def execute_duo_move(self, node1, node2):
+
+    def execute_duo_move(self, nodes):
+        ''' Accepts a duo move (a 2-tuple of nodes) and returns a new Graph in which the
+            duo move has been executed '''
+        node1, node2 = nodes
         new_node_edges = copy.deepcopy(self.node_edges)
-        node_edge1 = list(filter(lambda x: x[0] == node1, self.node_edges))[0]
-        node_edge2 = list(filter(lambda x: x[0] == node2, self.node_edges))[0]
-        index1 = (node_edge1[1].index(node2) + 1) % len(node_edge1[1])
-        index2 = (node_edge2[1].index(node1) + 1) % len(node_edge2[1])
-        prev_destination1 = node_edge1[1][index1]
-        prev_destination2 = node_edge2[1][index2]
+        node1_destinations = list(filter(lambda x: x[0] == node1, self.node_edges))[0][1]
+        node2_destinations = list(filter(lambda x: x[0] == node2, self.node_edges))[0][1]
+        index1 = (node1_destinations.index(node2) + 1) % len(node1_destinations)
+        index2 = (node2_destinations.index(node1) + 1) % len(node2_destinations)
+        prev_destination1 = node1_destinations[index1]
+        prev_destination2 = node2_destinations[index2]
         for i, (node, destinations) in enumerate(new_node_edges):
             if node == node1:
                 destinations[index1] = prev_destination2
@@ -139,7 +188,6 @@ class Graph:
             if node == prev_destination2:
                 index = destinations.index(node2)
                 new_node_edges[i][1][index] = node1
-                
         return Graph(
             new_node_edges, 
             self.previous_graphs,
@@ -147,101 +195,51 @@ class Graph:
             self.depth + 1
         )
     
-    def execute_quad_move(self, node1, node2, node3, node4):
+    def execute_quad_move(self, nodes):
+        ''' Accepts a quad move (a 4-tuple of nodes) and returns a new Graph in which the
+            quad move has been executed '''
         new_node_edges = copy.deepcopy(self.node_edges)
         for i, (node, destinations) in enumerate(new_node_edges):
-            if node == node1:
-                new_node_edges[i] = (node4, destinations)
-            elif node == node2:
-                new_node_edges[i] = (node1, destinations)
-            elif node == node3:
-                new_node_edges[i] = (node2, destinations)
-            elif node == node4:
-                new_node_edges[i] = (node3, destinations)
+            if node in nodes:
+                index = (nodes.index(node) + 1) % len(nodes)
+                new_node_edges[i] = (nodes[index], destinations)
             for j, destination in enumerate(destinations):
-                if destination == node1:
-                    new_node_edges[i][1][j] = node4
-                elif destination == node2:
-                    new_node_edges[i][1][j] = node1
-                elif destination == node3:
-                    new_node_edges[i][1][j] = node2
-                elif destination == node4:
-                    new_node_edges[i][1][j] = node3
-                    
+                if destination in nodes:
+                    index = (nodes.index(destination) + 1) % len(nodes)
+                    new_node_edges[i][1][j] = nodes[index]
         return Graph(
             new_node_edges, 
             self.previous_graphs, 
-            self.previous_moves + ['Quad move with {}, {}, {}, and {}'.format(node1, node2, node3, node4)],
+            self.previous_moves + ['Quad move with {}, {}, {}, and {}'.format(*nodes)],
             self.depth + 1
         )
     
-    def execute_all_moves(self):
+    def execute_possible_moves(self):
+        ''' Determines all possible duo and quad moves, then returns a list of new Graphs,
+            each of which has had one of the possible moves applied to it.
+            
+            If this Graph is a repeat representation of a Graph stored in previous_graphs,
+            then an empty list. 
+        '''
         for previous_graph in self.previous_graphs[:-1]:
             if self == previous_graph:
                 return []
-            
-        new_graphs = []
-        duos = self.get_duo_moves()
-        quads = self.get_quad_moves()
-        for duo in duos:
-            new_graphs.append(self.execute_duo_move(*duo))
-        for quad in quads:
-            new_graphs.append(self.execute_quad_move(*quad))
-            
-        return new_graphs
-    
-    def __hash__(self):
-        
-        path = ['e1']
-        
-        queue = []
-        
-        node_edge_index = None
-        destination_index = None
-        for i, (node, destinations) in enumerate(self.node_edges):
-            if 'e1' in destinations:
-                node_edge_index = i
-                destination_index = destinations.index('e1')
-                path.append(node)
-                queue.append((node, 'e1'))
-                
-        while len(path) < 24:
-            
-            node, origin = queue.pop(0)
-            destinations = list(filter(lambda x: x[0] == node, self.node_edges))[0][1]
-            origin_index = destinations.index(origin)
-            for i in range(1, len(destinations)):
-                destination_index = (origin_index + i) % len(destinations)
-                destination = destinations[destination_index]
-                if destination not in path:
-                    path.append(destination)
-                    if destination[0] != 'e':
-                        queue.append((destination, node))
-        
-        hash_string = ''
-        for node in path:
-            if node[0] == 'e':
-                hash_string += node
-            else:
-                hash_string += node[0]
-        
-        return hash(hash_string)
-    
-    def __eq__(self, other):
-        if isinstance(other, Graph):
-            return hash(self) == hash(other)
-        return False
+        return (    
+            list(map(self.execute_duo_move, self.get_duo_moves())) +
+            list(map(self.execute_quad_move, self.get_quad_moves()))
+        )
 ```
 
+## Searching for the solution
 
-```python
-node_edges = [
-    ('w1', ['e1', 'b1', 'b8']), ('w2', ['b1', 'b2', 'b3']), ('w3', ['b2', 'b4', 'b3']), ('w4', ['b4', 'e5', 'b5']),
-    ('w5', ['b3', 'b5', 'w7']), ('w6', ['b5', 'e6', 'b6']), ('w7', ['w5', 'b6', 'b8']), ('w8', ['b6', 'e7', 'b7']),
-    ('b1', ['e2', 'w2', 'w1']), ('b2', ['e3', 'w3', 'w2']), ('b3', ['w3', 'w5', 'w2']), ('b4', ['e4', 'w4', 'w3']),
-    ('b5', ['w4', 'w6', 'w5']), ('b6', ['w6', 'w8', 'w7']), ('b7', ['w8', 'e8', 'b8']), ('b8', ['w7', 'b7', 'w1'])
-]
-```
+Now we can perform a breadth-first search for the solution.
+
+We initialize a queue that starts out with only the starting Graph and begin looping.
+
+Each iteration of the loop, we take remove the first Graph from the queue, then determine and
+execute all possible moves for that Graph. We add the resulting Graphs to the end of the queue.
+
+If a Graph is determined to be a repeat representation, we do not continue searching down that branch.
 
 
 ```python
@@ -250,37 +248,40 @@ queue = [Graph(starting_node_edges)]
 solution = None
 
 print('Solving...')
+iterations = 0
+start_time = time.time()
 
 while True:
-    
     graph = queue.pop(0)
-    
     if graph == target:
         solution = graph
         break
-        
-    queue += graph.execute_all_moves()
+    queue += graph.execute_possible_moves()
+    iterations += 1
 
-print('Solved.')
+seconds = round(time.time() - start_time, 2)
+print('Solved in {} seconds after searching through {:,} graphs.'.format(seconds, iterations))
 ```
 
     Solving...
-    Solved.
+    Solved in 14.47 seconds after searching through 12,000 graphs.
 
+
+## The solution
 
 
 ```python
-IPython.display.display(IPython.display.HTML('<h1>Starter graph</h1>'))
+IPython.display.display(IPython.display.HTML('<h2>Starter graph</h2>'))
 IPython.display.display(IPython.display.HTML('<img src="starter_graph.png" width="390"/>'))
 for i, graph in enumerate(solution.previous_graphs):
-    IPython.display.display(IPython.display.HTML('<h1>Step {}: {}</h1>'.format(i + 1, graph.previous_moves[i])))
+    IPython.display.display(IPython.display.HTML('<h2>Step {}: {}</h2>'.format(i + 1, graph.previous_moves[i])))
     graph.draw()
-IPython.display.display(IPython.display.HTML('<h1>Solution graph</h1>'))
+IPython.display.display(IPython.display.HTML('<h2>Solution graph</h2>'))
 IPython.display.display(IPython.display.HTML('<img src="solution_graph.png" width="390"/>'))
 ```
 
 
-<h1>Starter graph</h1>
+<h2>Starter graph</h2>
 
 
 
@@ -288,87 +289,87 @@ IPython.display.display(IPython.display.HTML('<img src="solution_graph.png" widt
 
 
 
-<h1>Step 1: Starter graph</h1>
+<h2>Step 1: Starter graph</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_9_3.png)
+![png](plesser_problem_files/plesser_problem_11_3.png)
     
 
 
 
-<h1>Step 2: Duo move with b7 and b8</h1>
+<h2>Step 2: Duo move with b7 and b8</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_9_5.png)
+![png](plesser_problem_files/plesser_problem_11_5.png)
     
 
 
 
-<h1>Step 3: Quad move with w2, b2, w3, and b3</h1>
+<h2>Step 3: Quad move with w2, b2, w3, and b3</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_9_7.png)
+![png](plesser_problem_files/plesser_problem_11_7.png)
     
 
 
 
-<h1>Step 4: Duo move with b3 and b1</h1>
+<h2>Step 4: Duo move with b2 and b1</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_9_9.png)
+![png](plesser_problem_files/plesser_problem_11_9.png)
     
 
 
 
-<h1>Step 5: Duo move with b2 and b4</h1>
+<h2>Step 5: Duo move with b3 and b4</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_9_11.png)
+![png](plesser_problem_files/plesser_problem_11_11.png)
     
 
 
 
-<h1>Step 6: Duo move with w5 and w3</h1>
+<h2>Step 6: Duo move with w5 and w2</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_9_13.png)
+![png](plesser_problem_files/plesser_problem_11_13.png)
     
 
 
 
-<h1>Step 7: Quad move with w4, b4, w3, and b5</h1>
+<h2>Step 7: Quad move with w4, b4, w2, and b5</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_9_15.png)
+![png](plesser_problem_files/plesser_problem_11_15.png)
     
 
 
 
-<h1>Step 8: Quad move with w7, b6, w8, and b8</h1>
+<h2>Step 8: Quad move with w7, b6, w8, and b8</h2>
 
 
 
     
-![png](plesser_problem_files/plesser_problem_9_17.png)
+![png](plesser_problem_files/plesser_problem_11_17.png)
     
 
 
 
-<h1>Solution graph</h1>
+<h2>Solution graph</h2>
 
 
 
